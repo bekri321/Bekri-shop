@@ -1,10 +1,73 @@
 <!DOCTYPE html>
-<html>
+<html lang="hi">
 <head>
-<title>Bakery</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rashmi Bakery Shop – Batteral</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-<h1>Rashmi Bakery Shop</h1>
-<p>Website working hai 🎉</p>
+
+<header>
+<h2>Rashmi Bakery Shop – Batteral</h2>
+<p>⏰ 9 AM – 7 PM | 📞 7647071356</p>
+</header>
+
+<div class="offer-banner">
+🎉 Festival Special Offer Available
+</div>
+
+<div class="toggle-panel">
+<button onclick="showCustomer()">Customer</button>
+<button onclick="showAdmin()">Admin</button>
+</div>
+
+<!-- CUSTOMER -->
+<section id="customer-view">
+<div class="products" id="product-list"></div>
+
+<div class="cart">
+<h3>🧾 Cart</h3>
+<div id="cart-items"></div>
+<p id="cart-total">Total: ₹0</p>
+<button onclick="checkout()">WhatsApp Bill</button>
+<button onclick="printPDF()">Print / Download PDF</button>
+</div>
+</section>
+
+<!-- ADMIN -->
+<section id="admin-view" style="display:none;padding:15px">
+<h3>Admin Panel</h3>
+<input id="pname" placeholder="Product name">
+<input id="pprice" type="number" placeholder="Price per KG">
+<input id="pstock" type="number" placeholder="Stock (KG)">
+<button onclick="addProduct()">Add Product</button>
+<div id="admin-stock"></div>
+</section>
+
+<footer>
+WhatsApp / Call: 7647071356
+</footer>
+
+<script src="script.js"></script>
+<script>
+showCustomer();
+
+function printPDF(){
+ const {jsPDF}=window.jspdf;
+ const pdf=new jsPDF();
+ let y=10,total=0;
+ pdf.text("Rashmi Bakery Shop",10,y);y+=10;
+ cart.forEach(x=>{
+  total+=x.price;
+  pdf.text(`${x.name} ${x.weight} KG ₹${x.price}`,10,y);
+  y+=8;
+ });
+ pdf.text("Total ₹"+total,10,y+5);
+ pdf.save("bakery-bill.pdf");
+}
+</script>
+
 </body>
-</html>
+  </html>
