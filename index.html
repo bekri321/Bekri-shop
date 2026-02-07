@@ -4,73 +4,236 @@
  <meta name="google-site-verification" content="LsUI2LEMxc_eabjh08errtpzwAJlC51ywqHOn6exSn8" />
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rashmi Bakery Shop – Batteral | Fresh Cakes, Bread & Sweets</title>
-<meta name="description" content="Rashmi Bakery Shop – Batteral. Fresh bakery items including cakes, bread, rusk, namkeen & sweets. Order online or WhatsApp for your bakery needs.">
-<meta name="keywords" content="Bakery, Rashmi Bakery, Cake, Bread, Rusk, Namkeen, Sweets, Online Order, Batteral">
-<meta name="author" content="Rashmi Bakery Shop">
-<link rel="stylesheet" href="style.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<title>Bakery POS Final</title>
+
+<style>
+body{font-family:Arial;background:#f4f4f4;margin:0}
+header{background:#e69a00;color:#fff;text-align:center;padding:15px}
+.products{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;padding:10px}
+.card{background:#fff;padding:12px;border-radius:10px}
+button{background:#e69a00;color:#fff;border:none;padding:7px;border-radius:8px;width:100%;margin-top:5px}
+.cart,.admin{background:#fff;margin:10px;padding:12px;border-radius:10px}
+input,select{width:100%;padding:6px;margin-top:5px}
+.small{font-size:12px;color:#555}
+</style>
 </head>
+
 <body>
 
 <header>
-<h2>Rashmi Bakery Shop – Batrel</h2>
-<p>⏰ 9 AM – 7 PM | 📞 7647071356</p>
+<h2>🍞 Bakery POS System</h2>
+<p>Auto KG | Stock | Report | WhatsApp</p>
 </header>
 
-<div class="offer-banner">
-🎉 Festival Special Offer Available
-</div>
+<button onclick="openAdmin()">🔐 Admin</button>
 
-<div class="toggle-panel">
-<button onclick="showCustomer()">Customer</button>
-<button onclick="showAdmin()">Admin</button>
-</div>
-
-<!-- CUSTOMER -->
-<section id="customer-view">
-<div class="products" id="product-list"></div>
+<div class="products" id="productList"></div>
 
 <div class="cart">
-<h3>🧾 Cart</h3>
-<div id="cart-items"></div>
-<p id="cart-total">Total: ₹0</p>
-<button onclick="checkout()">WhatsApp Bill</button>
-<button onclick="printPDF()">Print / Download PDF</button>
+<h3>🛒 Cart</h3>
+<div id="cartItems">Empty</div>
+<h3 id="total">Total ₹0</h3>
+<button onclick="sendBill()">📲 WhatsApp Bill</button>
+<button onclick="printPDF()">🖨️ PDF</button>
 </div>
-</section>
 
-<!-- ADMIN -->
-<section id="admin-view" style="display:none;padding:15px">
-<h3>Admin Panel</h3>
-<input id="pname" placeholder="Product name">
-<input id="pprice" type="number" placeholder="Price per KG">
-<input id="pstock" type="number" placeholder="Stock (KG)">
-<button onclick="addProduct()">Add Product</button>
-<div id="admin-stock"></div>
-</section>
+<div class="admin" id="adminBox" style="display:none">
+<h3>➕ Add Product</h3>
+<input id="aname" placeholder="Product name">
+<input id="aprice" type="number" placeholder="Price">
+<select id="aunit">
+<option value="KG">KG</option>
+<option value="Packet">Packet</option>
+<option value="Piece">Piece</option>
+</select>
+<input id="astock" type="number" placeholder="Stock">
+<button onclick="addProduct()">Save</button>
 
-<footer>
-WhatsApp / Call: 7647071356
-</footer>
+<hr>
+<h3>📊 Reports</h3>
+<button onclick="viewDaily()">Daily View</button>
+<button onclick="sendDaily()">Daily WhatsApp</button>
 
-<script src="script.js"></script>
+<button onclick="viewWeekly()">Weekly View</button>
+<button onclick="sendWeekly()">Weekly WhatsApp</button>
+
+<button onclick="viewMonthly()">Monthly View</button>
+<button onclick="sendMonthly()">Monthly WhatsApp</button>
+
+<div id="reportBox"></div>
+
+<hr>
+<h3>📦 Stock</h3>
+<div id="stockList"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <script>
-showCustomer();
+const ADMIN_PASS="1234";
 
-function printPDF(){
- const {jsPDF}=window.jspdf;
- const pdf=new jsPDF();
- let y=10,total=0;
- pdf.text("Rashmi Bakery Shop",10,y);y+=10;
- cart.forEach(x=>{
-  total+=x.price;
-  pdf.text(`${x.name} ${x.weight} KG ₹${x.price}`,10,y);
-  y+=8;
- });
- pdf.text("Total ₹"+total,10,y+5);
- pdf.save("bakery-bill.pdf");
+let products=[
+{name:"Bread",price:40,unit:"Piece",stock:100},
+{name:"Pav",price:5,unit:"Piece",stock:200},
+{name:"Cake Slice",price:30,unit:"Piece",stock:80},
+{name:"Pastry",price:40,unit:"Piece",stock:60},
+{name:"Cookies",price:200,unit:"KG",stock:20},
+{name:"Namkeen",price:160,unit:"KG",stock:25},
+{name:"Rusk",price:90,unit:"Packet",stock:40},
+{name:"Toast",price:70,unit:"Packet",stock:30}
+];
+
+let cart=[];
+let sales=[];
+
+/* LOAD PRODUCTS */
+function loadProducts(){
+let h="";
+products.forEach((p,i)=>{
+h+=`<div class="card">
+<b>${p.name}</b><br>
+₹${p.price}/${p.unit}
+<div class="small">Stock: ${p.stock}</div>
+<input id="v${i}" type="number" placeholder="${p.unit=="KG"?"₹ amount":"Quantity"}">
+<button onclick="addCart(${i})">Add</button>
+</div>`;
+});
+productList.innerHTML=h;
 }
+
+/* ADD CART */
+function addCart(i){
+let p=products[i];
+let v=+document.getElementById("v"+i).value;
+if(!v||v<=0)return alert("Value डालो");
+
+let used,price,qty;
+if(p.unit=="KG"){
+used=v/p.price;
+if(used>p.stock)return alert("Stock नहीं");
+qty=(used*1000).toFixed(0)+" gm";
+price=v;
+}else{
+used=v;
+if(used>p.stock)return alert("Stock नहीं");
+qty=v+" "+p.unit;
+price=v*p.price;
+}
+
+p.stock-=used;
+cart.push({name:p.name,qty,price,idx:i,used});
+sales.push({name:p.name,qty,price,date:new Date()});
+loadProducts();updateCart();loadStock();
+}
+
+/* CART */
+function updateCart(){
+let h="",t=0;
+cart.forEach((c,i)=>{
+t+=c.price;
+h+=`${c.name} (${c.qty}) ₹${c.price}
+<button onclick="removeItem(${i})">❌</button><br>`;
+});
+cartItems.innerHTML=h||"Empty";
+total.innerText="Total ₹"+t;
+}
+
+function removeItem(i){
+let c=cart[i];
+products[c.idx].stock+=c.used;
+cart.splice(i,1);
+loadProducts();updateCart();loadStock();
+}
+
+/* ADMIN */
+function openAdmin(){
+let p=prompt("Password");
+if(p==ADMIN_PASS){adminBox.style.display="block";loadStock();}
+else alert("Wrong Password");
+}
+
+function addProduct(){
+products.push({name:aname.value,price:+aprice.value,unit:aunit.value,stock:+astock.value});
+aname.value=aprice.value=astock.value="";
+loadProducts();loadStock();
+}
+
+function loadStock(){
+let h="";
+products.forEach((p,i)=>{
+h+=`${p.name} ₹${p.price}/${p.unit} | Stock ${p.stock}
+<button onclick="del(${i})">Delete</button><br>`;
+});
+stockList.innerHTML=h;
+}
+function del(i){products.splice(i,1);loadProducts();loadStock();}
+
+/* REPORT HELPERS */
+function isSameDay(d){
+let n=new Date();
+return d.toDateString()==n.toDateString();
+}
+function getWeek(d){
+let onejan=new Date(d.getFullYear(),0,1);
+return Math.ceil((((d-onejan)/86400000)+onejan.getDay()+1)/7);
+}
+
+/* DAILY */
+function viewDaily(){showReport(sales.filter(s=>isSameDay(s.date)),"📊 Daily Report");}
+function sendDaily(){sendReport(sales.filter(s=>isSameDay(s.date)),"📊 Daily Report");}
+
+/* WEEKLY */
+function viewWeekly(){
+let w=getWeek(new Date());
+showReport(sales.filter(s=>getWeek(s.date)==w),"📅 Weekly Report");
+}
+function sendWeekly(){
+let w=getWeek(new Date());
+sendReport(sales.filter(s=>getWeek(s.date)==w),"📅 Weekly Report");
+}
+
+/* MONTHLY */
+function viewMonthly(){
+let m=new Date().getMonth(),y=new Date().getFullYear();
+showReport(sales.filter(s=>s.date.getMonth()==m&&s.date.getFullYear()==y),"🗓️ Monthly Report");
+}
+function sendMonthly(){
+let m=new Date().getMonth(),y=new Date().getFullYear();
+sendReport(sales.filter(s=>s.date.getMonth()==m&&s.date.getFullYear()==y),"🗓️ Monthly Report");
+}
+
+/* REPORT CORE */
+function showReport(arr,title){
+let h=`<h4>${title}</h4>`,t=0;
+if(arr.length==0){reportBox.innerHTML="No Sale";return;}
+arr.forEach(s=>{t+=s.price;h+=`${s.name} (${s.qty}) ₹${s.price}<br>`;});
+h+=`<b>Total ₹${t}</b>`;
+reportBox.innerHTML=h;
+}
+function sendReport(arr,title){
+let m=title+"\n\n",t=0;
+arr.forEach(s=>{t+=s.price;m+=`${s.name} (${s.qty}) ₹${s.price}\n`;});
+m+="\nTotal ₹"+t;
+window.open("https://wa.me/917647071356?text="+encodeURIComponent(m));
+}
+
+/* BILL */
+function sendBill(){
+let m="🧾 Bakery Bill\n",t=0;
+cart.forEach(c=>{t+=c.price;m+=`${c.name} ${c.qty} ₹${c.price}\n`;});
+m+="Total ₹"+t;
+window.open("https://wa.me/917647071356?text="+encodeURIComponent(m));
+}
+function printPDF(){
+const {jsPDF}=window.jspdf;
+let pdf=new jsPDF(),y=20,t=0;
+pdf.text("Bakery Bill",10,10);
+cart.forEach(c=>{t+=c.price;pdf.text(`${c.name} ${c.qty} ₹${c.price}`,10,y);y+=8;});
+pdf.text("Total ₹"+t,10,y+10);
+pdf.save("bill.pdf");
+}
+
+loadProducts();
 </script>
 <!-- WhatsApp Floating Button -->
 <a href="https://wa.me/917647071356?text=Hello%20Rashmi%20Bakery%2C%20I%20want%20to%20order"
